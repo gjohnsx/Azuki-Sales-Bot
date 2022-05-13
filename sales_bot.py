@@ -170,6 +170,23 @@ def save_image_file(token_id, img_url):
 
             handle.write(block)
             
+def save_image_file_gif():
+    """[Saves the beanz gif from imgur in the /tmp/ directory of AWS Lambda so that it can be uploaded to twitter]
+    """    
+    url = "https://i.imgur.com/AmsrZPS.gif"
+    with open('beanz_moon.gif', 'wb') as handle:
+    # with open(f'/tmp/beanz_moon.gif', 'wb') as handle:
+        response = requests.get(url, stream=True)
+
+        if not response.ok:
+            print(response)
+
+        for block in response.iter_content(1024):
+            if not block:
+                break
+
+            handle.write(block)
+            
             
 def save_image_send_tweet(nft_id, img_url, api, client, tweet):
     save_image_file(nft_id, img_url)                                
@@ -211,7 +228,7 @@ def merge_dicts(dict1, dict2):
     
 
 def lambda_handler(event, context):
-    live_tweet=False # change to True to actually send out tweets. Otherwise it just prints Tweets to console.
+    live_tweet=True # change to True to actually send out tweets. Otherwise it just prints Tweets to console.
     
     # Contracts:
     AZUKI = "0xed5af388653567af2f388e6224dc7c4b3241c544"
@@ -221,8 +238,8 @@ def lambda_handler(event, context):
     end_block = 99999999
         
     # Test & Manual run block numbers:
-    # start_block = 14718619
-    # end_block = 14718619
+    start_block = 14768611
+    end_block = 14768611
     
     # 1.) get a list of all the transactions for a contract
     azuki_txns = get_transactions(AZUKI, start_block, end_block, True)
@@ -362,8 +379,12 @@ def lambda_handler(event, context):
                     print(tweet)
                     
                     if live_tweet:
-                        response = client.create_tweet(text=tweet)
+                        save_image_file_gif()
+                        filename = "beanz_moon.gif"
+                        media = api.media_upload(filename, chunked=True, media_category='tweet_gif')
+                        response = client.create_tweet(text=tweet, media_ids=[media.media_id_string])
                         print(response)
+                        os.remove(filename)
 
                 else:
                     # multiple types of NFTs sold in this gem sweep. Work on this later.

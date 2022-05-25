@@ -1,5 +1,7 @@
 import requests
 import json
+import datetime
+import time
 from config import OPENSEA_API_KEY
 
 def get_collection(contract):
@@ -38,12 +40,17 @@ def get_opensea_events(token_id, contract, slug, only_opensea=True):
     response = requests.get(url, headers=headers)
     try:
         events = json.loads(response.text)['asset_events']
+        
+        recent_event_date = events[0]['event_timestamp']
+        today = datetime.date.today()
+        
+        if recent_event_date[0:10] == str(today):
+            return events
+        else:
+            return None
+        
     except:
-        events = None
-    # print("-"*25, "\n")
-    # print(f"Events for {slug} #{token_id}:")
-    print(events, "\n")
-    return events
+        return None
     
     
 def get_collection_slug(contract):
